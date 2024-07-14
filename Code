@@ -1,0 +1,196 @@
+package application;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Insets;
+import javafx.scene.layout.Priority;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// Encapsulation: Using private fields and public getters/setters
+class Note {
+    private String title;
+    private String content;
+
+    public Note() {
+        this.title = "";
+        this.content = "";
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    @Override
+    public String toString() {
+        return "Title: " + title + "\nContent: " + content;
+    }
+}
+
+// Inheritance: Extending Note class
+class TaggedNote extends Note {
+    private String tag;
+
+    public TaggedNote() {
+        super();
+        this.tag = "";
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "\nTag: " + tag;
+    }
+}
+
+// Abstraction: Creating an abstract class
+abstract class NoteManager {
+    public abstract void saveNote();
+    public abstract void loadNote();
+    public abstract void deleteNote();
+}
+
+// Polymorphism: Implementing the abstract methods
+class SimpleNoteManager extends NoteManager {
+    private List<Note> notes;
+    private Note currentNote;
+
+    public SimpleNoteManager() {
+        this.notes = new ArrayList<>();
+        this.currentNote = new Note();
+    }
+
+    @Override
+    public void saveNote() {
+        if (!notes.contains(currentNote)) {
+            notes.add(currentNote);
+        }
+        System.out.println("Saving Note: " + currentNote.toString());
+    }
+
+    @Override
+    public void loadNote() {
+        System.out.println("Loading Note: " + currentNote.toString());
+    }
+
+    @Override
+    public void deleteNote() {
+        notes.remove(currentNote);
+        currentNote = new Note();
+        System.out.println("Note deleted.");
+    }
+
+    public Note getCurrentNote() {
+        return currentNote;
+    }
+
+    public void setCurrentNote(Note note) {
+        this.currentNote = note;
+    }
+
+    public List<Note> getAllNotes() {
+        return notes;
+    }
+}
+
+public class Main extends Application {
+    @Override
+    public void start(Stage primaryStage) {
+        SimpleNoteManager noteManager = new SimpleNoteManager();
+
+        TextArea titleField = new TextArea();
+        titleField.setPromptText("Enter title here...");
+        titleField.setMaxHeight(40);
+
+        TextArea contentField = new TextArea();
+        contentField.setPromptText("Enter content here...");
+        contentField.setMaxHeight(100);
+
+        Button saveButton = new Button("Save Note");
+        saveButton.getStyleClass().add("button-save");
+
+        saveButton.setOnAction(e -> {
+            Note note = new Note();
+            note.setTitle(titleField.getText());
+            note.setContent(contentField.getText());
+            noteManager.setCurrentNote(note);
+            noteManager.saveNote();
+            titleField.clear();
+            contentField.clear();
+        });
+
+        Button viewButton = new Button("View Notes");
+        ListView<String> listView = new ListView<>();
+        viewButton.getStyleClass().add("button-view");
+        viewButton.setOnAction(e -> {
+            listView.getItems().clear();
+            for (Note note : noteManager.getAllNotes()) {
+                listView.getItems().add(note.toString());
+            }
+        });
+
+        Button deleteButton = new Button("Delete Note");
+        deleteButton.getStyleClass().add("button-delete");
+        deleteButton.setOnAction(e -> {
+            String selectedItem = listView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null) {
+                Note noteToDelete = null;
+                for (Note note : noteManager.getAllNotes()) {
+                    if (note.toString().equals(selectedItem)) {
+                        noteToDelete = note;
+                        break;
+                    }
+                }
+                if (noteToDelete != null) {
+                    noteManager.setCurrentNote(noteToDelete);
+                    noteManager.deleteNote();
+                    listView.getItems().remove(selectedItem);
+                }
+            }
+        });
+
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(10));
+        layout.getChildren().addAll(new Label("Title:"), titleField, new Label("Content:"), contentField, saveButton, viewButton, listView, deleteButton);
+
+        Scene scene = new Scene(layout, 400, 500);
+
+        // Load the CSS file
+        String css = getClass().getResource("styles.css") != null ? getClass().getResource("styles.css").toExternalForm() : null;
+        if (css != null) {
+            scene.getStylesheets().add(css);
+        }
+
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Note Taking App");
+        primaryStage.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
+
